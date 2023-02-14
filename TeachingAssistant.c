@@ -22,103 +22,99 @@ int taDormeFlag = 0;
 
 int main( int argc, char **argv ){
 
+	int i;
+	int numeroStudenti;
+
+	if (argc > 1 ) {
+		if ( isNumero( argv[1] ) == 1) {
+			numeroStudenti = atoi( argv[1] );
+		}
+		else {
+			printf("ERRORE!! Input non valido");
+			return 0;
+		}
+	}
+	else { numeroStudenti = NUMERO_STUDENTI;
+	}
+
+	int idStudentes[numeroStudenti];
+	pthread_t students[numeroStudenti];
+	pthread_t ta;
+
+	sem_init( &semStudenti, 0, 0 );
+	sem_init( &semAssistente, 0, 1 );
+
+	
+	pthread_mutex_init( &mutexThread, NULL );
+	pthread_create( &ta, NULL, azioniAssistente, NULL );
+	for( i = 0; i < numeroStudenti; i++ ) {
+		idStudentes[i] = i + 1;
+		pthread_create( &students[i], NULL, azioniStudente, (void*) &idStudentes[i] );
+	}
+	pthread_join(ta, NULL);
+	for( i =0; i < numeroStudenti; i++ ) {
+		pthread_join( students[i],NULL );
+	}
 	return 0;
 }
 
 void* azioniAssistente() {
-
 	printf( "Stiamo vedendo gli studenti \n" );
-
 	while( 1 ) {
-
 		if ( numeroStudentiInAttesa > 0 ) {
 
 			taDormeFlag = 0;
 			sem_wait( &semStudenti );
 			pthread_mutex_lock( &mutexThread );
-
 			int tempoAiuto = rand() % 5;
-
 			printf( "Studente aiutato per %d secondi. Lo studente ha aspettato per %d.\n", tempoAiuto, (numeroStudentiInAttesa - 1) );
 			printf( "Lo studente %d sta ricevendo aiuto.\n",sediaAttesa[posizioneTaSuccessiva] );
-
 			sediaAttesa[posizioneTaSuccessiva]=0;
 			numeroStudentiInAttesa--;
 			posizioneTaSuccessiva = ( posizioneTaSuccessiva + 1 ) % NUMERO_SEDIE_ATTESA;
-
 			sleep( tempoAiuto );
-
 			pthread_mutex_unlock( &mutexThread );
 			sem_post( &semAssistente );
-
 		}
 		else {
-
 			if ( taDormeFlag == 0 ) {
-
 				printf( "Nessun studente sta aspettando. \n Dormendo...\n" );
 				taDormeFlag = 1;
-
 			}
-
 		}
-
 	}
-
 }
 
 void* azioniStudente( void* idStudente ) {
-
 	int id_studente = *(int*)idStudente;
-
 	while( 1 ) {
-
-		//if student is waiting, continue waiting
 		if ( isInAttesa( id_studente ) == 1 ) { continue; }
-
-		//student is programming.
 		int time = rand() % 5;
-		printf( "\tStudent %d is programming for %d seconds.\n", id_studente, time );
+		printf( "\tLo studente %d sta programmando per %d secondi.\n", id_studente, time );
 		sleep( time );
-
 		pthread_mutex_lock( &mutexThread );
-
 		if( numeroStudentiInAttesa < NUMERO_SEDIE_ATTESA ) {
-
 			sediaAttesa[nuovaPosizione] = id_studente;
 			numeroStudentiInAttesa++;
-
-			//student takes a seat in the hallway.
-			printf( "\t\tStudent %d takes a seat. Students waiting = %d.\n", id_studente, numeroStudentiInAttesa );
+			printf( "\t Lo studente %d prende posto. Lo studente aspetta = %d.\n", id_studente, numeroStudentiInAttesa );
 			nuovaPosizione = ( nuovaPosizione + 1 ) % NUMERO_SEDIE_ATTESA;
-
 			pthread_mutex_unlock( &mutexThread );
-
-			//wake TA if sleeping
 			sem_post( &semStudenti );
 			sem_wait( &semAssistente );
-
-		}
-		else {
-
+}
+		else { 
 			pthread_mutex_unlock( &mutexThread );
-
-			//No chairs available. Student will try later.
 			printf( "Lo studente %d aspetterà\n",id_studente );
-
 		}
-
 	}
-
 }
 
-int isNumero(char number[])
-{
-    int i;
-		for ( i = 0 ; number[i] != 0; i++ )
-    {
-        if (!isdigit(number[i]))
+int isNumero(char number[]){
+	int i;
+	for ( i = 0 ; number[i] != 0; i++ ) {
+        if (!isdigit(number[i])){
             return 0;
+	}
     }
     return 1;
 }
