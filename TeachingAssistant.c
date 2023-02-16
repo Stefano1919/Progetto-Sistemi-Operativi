@@ -21,10 +21,8 @@ int posizioneTaSuccessiva = 0;
 int taDormeFlag = 0;
 
 int main( int argc, char **argv ){
-
 	int i;
 	int numeroStudenti;
-
 	if (argc > 1 ) {
 		if ( isNumero( argv[1] ) == 1) {
 			numeroStudenti = atoi( argv[1] );
@@ -36,15 +34,11 @@ int main( int argc, char **argv ){
 	}
 	else { numeroStudenti = NUMERO_STUDENTI;
 	}
-
 	int idStudentes[numeroStudenti];
 	pthread_t students[numeroStudenti];
 	pthread_t ta;
-
 	sem_init( &semStudenti, 0, 0 );
 	sem_init( &semAssistente, 0, 1 );
-
-	
 	pthread_mutex_init( &mutexThread, NULL );
 	pthread_create( &ta, NULL, azioniAssistente, NULL );
 	for( i = 0; i < numeroStudenti; i++ ) {
@@ -62,7 +56,6 @@ void* azioniAssistente() {
 	printf( "Stiamo vedendo gli studenti \n" );
 	while( 1 ) {
 		if ( numeroStudentiInAttesa > 0 ) {
-
 			taDormeFlag = 0;
 			sem_wait( &semStudenti );
 			pthread_mutex_lock( &mutexThread );
